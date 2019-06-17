@@ -62,10 +62,11 @@ namespace DotNetCoreAssessment.Tests.Services
         public void AddSubItem_Added2ExtraBacconTo2ChesseBurger_RecalculatesSubTotal()
         {
             //Arrange
-            Order order = GenerateOrder();
+            Order order = GenerateOrder();          
             order.OrderItems.Add(GenerateMcHappyMeal(quantity: 1, cheeseBurgerQuantity: 2));
             OrderItem subItem = GenerateExtraBaccon(2);
-            decimal expectedSubTotal = 24;
+            // ALEJANDRO VACA change expectedSubTotal to 14, I think 24 was wrong.
+            decimal expectedSubTotal = 14;
 
             //Act
             _sut.AddSubItem(order, _cheeseBurgerOrderItemId, subItem);

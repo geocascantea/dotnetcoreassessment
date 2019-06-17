@@ -9,11 +9,11 @@ namespace DotNetCoreAssessment.Web.Controllers
     [ApiController]
     public class OrderController : ControllerBase
     {
-        private readonly OrderService _orderService;
+        private IOrderService _orderService { get; set; }
 
-        public OrderController()
+        public OrderController(IOrderService orderService)
         {
-            _orderService = new OrderService();
+            this._orderService = orderService;
         }
         // POST api/order
         /// <summary>

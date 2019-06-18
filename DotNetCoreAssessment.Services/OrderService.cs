@@ -1,5 +1,7 @@
 ﻿using DotNetCoreAssessment.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DotNetCoreAssessment.Services
 {
@@ -16,7 +18,7 @@ namespace DotNetCoreAssessment.Services
         public void AddOrderItem(Order order, OrderItem orderItem)
         {
             order.OrderItems.Add(orderItem);
-            RecalculateOrderTotal(order);
+            order.OrderSubTotal = RecalculateOrderTotal(order.OrderItems);
         }
 
         public void AddSubItem(Order order, Guid parentOrderItemId, OrderItem orderItem)
@@ -31,11 +33,63 @@ namespace DotNetCoreAssessment.Services
             OrderItem instance that matches the OrderItemId with the parentOrderItemId.
             */
 
+            ValidateProductInOrder(order.OrderItems, orderItem.ProductId);
+
+            var parent = GetCorrectParentOrderItem(order.OrderItems, parentOrderItemId);
+            parent?.SubItems.Add(orderItem);
+
             //Finally recalculate the order subtotal.
-            RecalculateOrderTotal(order);
+            order.OrderSubTotal = RecalculateOrderTotal(order.OrderItems);
         }
 
-        private void RecalculateOrderTotal(Order order)
+        /// <summary>
+        /// Checks if the product is already in the order (recursively)
+        /// </summary>
+        /// <param name="orderItems">OrderItems to check</param>
+        /// <param name="productId">Product to check for</param>
+        private void ValidateProductInOrder(IEnumerable<OrderItem> orderItems, string productId)
+        {
+            if (orderItems != null)
+            {
+                if (orderItems.Any(item => item.ProductId == productId))
+                    throw new Exception("ProductId already in Order");
+
+                foreach (var subitem in orderItems)
+                    ValidateProductInOrder(subitem.SubItems, productId);
+            }
+        }
+
+        /// <summary>
+        /// Looks for the correct orderItem in the whole tree structure
+        /// </summary>
+        /// <param name="orderItems">OrderItems to check</param>
+        /// <param name="parentOrderItemId">ParentId to look for</param>
+        /// <returns>The parent with the correct id</returns>
+        private OrderItem GetCorrectParentOrderItem(ICollection<OrderItem> orderItems, Guid parentOrderItemId)
+        {
+            OrderItem parent = null;
+
+            if (orderItems != null)
+            {
+                foreach (var subitem in orderItems)
+                {
+                    parent = (subitem.OrderItemId == parentOrderItemId) ? subitem : GetCorrectParentOrderItem(subitem.SubItems, parentOrderItemId);
+                    if (parent != null) break;
+                }
+            }
+
+            if (parent != null && parent.SubItems == null)
+                parent.SubItems = new List<OrderItem>();
+
+            return parent;
+        }
+
+        /// <summary>
+        /// Calculates the total amount of the order
+        /// </summary>
+        /// <param name="orderItems">OrderItems to calculate</param>
+        /// <returns>The total amount of the order</returns>
+        private decimal RecalculateOrderTotal(IEnumerable<OrderItem> orderItems)
         {
             /*
             TODO: 
@@ -52,8 +106,16 @@ namespace DotNetCoreAssessment.Services
             {Parents.Quantity} * ({SubItem.Quantity} * {SubItem.UnitPrice})
 
             */
+
+            decimal orderTotal = 0;
+
+            if (orderItems != null)
+            {
+                foreach (var subitem in orderItems)
+                    orderTotal += (subitem.Quantity * subitem.UnitPrice) + (subitem.Quantity * RecalculateOrderTotal(subitem.SubItems));
+            }
+
+            return orderTotal;
         }
-
-
     }
 }

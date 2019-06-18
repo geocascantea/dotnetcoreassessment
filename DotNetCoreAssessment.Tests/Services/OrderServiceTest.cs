@@ -65,7 +65,7 @@ namespace DotNetCoreAssessment.Tests.Services
             Order order = GenerateOrder();
             order.OrderItems.Add(GenerateMcHappyMeal(quantity: 1, cheeseBurgerQuantity: 2));
             OrderItem subItem = GenerateExtraBaccon(2);
-            decimal expectedSubTotal = 24;
+            decimal expectedSubTotal = 14;
 
             //Act
             _sut.AddSubItem(order, _cheeseBurgerOrderItemId, subItem);
